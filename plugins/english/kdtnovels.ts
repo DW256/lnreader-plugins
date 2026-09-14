@@ -114,7 +114,7 @@ export class KdtNovelsPlugin implements Plugin.PluginBase {
   name = 'KDTNovels';
   icon = 'src/en/kdtnovels/icon.png';
   site = BASE_URL;
-  version = '2.0.0';
+  version = '2.0.1';
   imageRequestInit: Plugin.ImageRequestInit = {
     headers: {
       Referer: `${BASE_URL}/`,
@@ -271,11 +271,13 @@ export class KdtNovelsPlugin implements Plugin.PluginBase {
     let html = await fetchText(url, { headers: REQUEST_HEADERS });
     let $ = loadCheerio(html);
     let content = $('.text-content').first();
+    if (!content.length) content = $('.reader-content').first();
 
     if (!content.length) {
       html = await fetchText(url, { headers: REQUEST_HEADERS });
       $ = loadCheerio(html);
       content = $('.text-content').first();
+      if (!content.length) content = $('.reader-content').first();
     }
 
     if (!content.length) {
@@ -283,6 +285,12 @@ export class KdtNovelsPlugin implements Plugin.PluginBase {
       if (isBlocked) {
         throw new Error(
           'KDT Novels blocked automated access to this chapter. Try again later or open the chapter in the webview from the reader error screen.',
+        );
+      }
+      const requiresLogin = $('a[href*="/login"]').length > 0;
+      if (requiresLogin) {
+        throw new Error(
+          'KDT Novels requires a logged-in session to read this chapter. Open it in the webview from the reader error screen to sign in.',
         );
       }
       throw new Error(
