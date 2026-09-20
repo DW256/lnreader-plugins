@@ -114,7 +114,7 @@ export class KdtNovelsPlugin implements Plugin.PluginBase {
   name = 'KDTNovels';
   icon = 'src/en/kdtnovels/icon.png';
   site = BASE_URL;
-  version = '2.0.1';
+  version = '2.1.0';
   imageRequestInit: Plugin.ImageRequestInit = {
     headers: {
       Referer: `${BASE_URL}/`,
@@ -233,6 +233,12 @@ export class KdtNovelsPlugin implements Plugin.PluginBase {
     const hideLocked = this.hideLocked;
     const seenChapters: string[] = [];
     $('ul.divide-y').each((_, ul) => {
+      const headingMatch = $(ul)
+        .closest('section')
+        .find('h3')
+        .first()
+        .text()
+        .match(/Volume\s*(\d+)/i);
       $(ul)
         .children('li')
         .each((_, li) => {
@@ -253,9 +259,13 @@ export class KdtNovelsPlugin implements Plugin.PluginBase {
           const isLocked = $li.find('svg[aria-label="Locked"]').length > 0;
           if (isLocked && hideLocked) return;
           seenChapters.push(path);
+          const volumeMatch = headingMatch || path.match(/-vol-(\d+)-/);
+          const volumePrefix = volumeMatch ? `Volume ${volumeMatch[1]} · ` : '';
           const numMatch = name.match(/Ch\.\s*([\d.]+)/);
           chapters.push({
-            name: isLocked ? `🔒 ${name}` : name,
+            name: isLocked
+              ? `🔒 ${volumePrefix}${name}`
+              : `${volumePrefix}${name}`,
             path,
             chapterNumber: numMatch ? parseFloat(numMatch[1]) : undefined,
           });
