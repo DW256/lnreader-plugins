@@ -8,7 +8,7 @@ class SakuraNovel implements Plugin.PluginBase {
   name = 'SakuraNovel';
   icon = 'src/id/sakuranovel/icon.png';
   site = 'https://sakuranovel.id/';
-  version = '1.0.1';
+  version = '1.0.2';
 
   parseNovels(loadedCheerio: CheerioAPI) {
     const novels: Plugin.NovelItem[] = [];
@@ -137,14 +137,31 @@ class SakuraNovel implements Plugin.PluginBase {
 
     const loadedCheerio = parseHTML(body);
 
-    const divi = loadedCheerio("div:contains('Daftar Isi') +")
-      .find('div:first')
-      .attr('class');
-    loadedCheerio(`.${divi}`).remove();
-    const chapterText =
-      loadedCheerio("div:contains('Daftar Isi') +").html() || '';
+    // The site rotates the chapter-body div's class name to foil scrapers and
+    // inserts an empty decoy sibling, so detect the real container by content.
+    const chapterText = loadedCheerio('.container')
+      .children('div')
+      .filter((i, el) => {
+        const paragraphs = loadedCheerio(el)
+          .find('p')
+          .filter((j, p) => loadedCheerio(p).text().trim().length > 40);
+        return paragraphs.length >= 2;
+      })
+      .first();
 
-    return chapterText;
+    if (!chapterText.length) return '';
+
+    chapterText.find('[data-index], iframe, .adsbygoogle, script').remove();
+
+    chapterText
+      .children()
+      .filter((i, el) => {
+        const text = loadedCheerio(el).text().trim();
+        return !text || /Sakuranovel\.id/i.test(text);
+      })
+      .remove();
+
+    return chapterText.html() || '';
   }
 
   async searchNovels(
