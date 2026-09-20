@@ -37,17 +37,25 @@ class SakuraNovel implements Plugin.PluginBase {
 
   async popularNovels(
     page: number,
-    { filters }: Plugin.PopularNovelsOptions<typeof this.filters>,
+    {
+      showLatestNovels,
+      filters,
+    }: Plugin.PopularNovelsOptions<typeof this.filters>,
   ): Promise<Plugin.NovelItem[]> {
-    let link = `${this.site}advanced-search/page/${page}/?title&author&yearx`;
-    link += `&status=${filters.status.value}`;
-    link += `&type=${filters.type.value}`;
-    link += `&order=${filters.sort.value}`;
+    const base = `${this.site}advanced-search/page/${page}/?title=&author=&yearx=&status=&type=&order=${
+      showLatestNovels ? 'latest' : filters.sort.value
+    }`;
 
-    if (filters.lang.value.length)
-      link += filters.lang.value.map(i => `&country[]=${i}`).join('');
-    if (filters.genre.value.length)
-      link += filters.genre.value.map(i => `&genre[]=${i}`).join('');
+    let link = base;
+    if (showLatestNovels) {
+      link +=
+        '&country[]=china&country[]=jepang&country[]=korea&country[]=unknown';
+    } else {
+      if (filters.lang.value.length)
+        link += filters.lang.value.map(i => `&country[]=${i}`).join('');
+      if (filters.genre.value.length)
+        link += filters.genre.value.map(i => `&genre[]=${i}`).join('');
+    }
 
     const result = await fetchApi(link);
     const body = await result.text();
